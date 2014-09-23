@@ -7,6 +7,7 @@ import java.util.List;
 import org.dom4j.Document;
 import org.dom4j.io.SAXReader;
 
+import pw.itcircle.javaBeanFactory.factory.Factory;
 import pw.itcircle.javaBeanFactory.factory.JavaBeanFactory;
 import pw.itcircle.javaBeanFactory.tools.XmlTool;
 
@@ -14,6 +15,7 @@ public class Tester {
 
 	public static void main(String[] args) 
 	{
+		Factory f = JavaBeanFactory.newInstance();
 		try {
 			Document calDocument = getDocumentByURI("D:\\test.xml");
 			
@@ -35,7 +37,7 @@ public class Tester {
 				}
 			}
 			s.setAllKecheng(cs);
-			String stu1Xml = JavaBeanFactory.newInstance().getObjectString(s, "School");
+			String stu1Xml = f.getObjectString(s, "School");
 			System.out.println(stu1Xml);
 			Student s3 = (Student)JavaBeanFactory.newInstance().createObject(XmlTool.stringToDocument(stu1Xml), Student.class);
 			System.out.println(s3);
@@ -50,7 +52,7 @@ public class Tester {
 			String stuXml = JavaBeanFactory.newInstance().getObjectString(stu, "School");
 			System.out.println(stuXml);
 			
-			Student s2 = (Student)JavaBeanFactory.newInstance().createObject(XmlTool.stringToDocument(stuXml), Student.class);
+			Student s2 = (Student)f.createObject(XmlTool.stringToDocument(stuXml), Student.class);
 			System.out.println(s2);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

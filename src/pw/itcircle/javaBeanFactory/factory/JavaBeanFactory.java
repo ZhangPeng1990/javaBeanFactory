@@ -25,7 +25,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 
-public class JavaBeanFactory 
+public class JavaBeanFactory implements Factory
 {
 	private static JavaBeanFactory instance = null;
 	private Object finalTargetObject = null;
