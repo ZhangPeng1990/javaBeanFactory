@@ -148,21 +148,14 @@ public class JavaBeanFactory implements Factory
 						newElement.setText(fillValue);
 					}
 					//集合
-					else if(judgeFieldType(field) == FieldType.COLLECTION_TYPE)
+					else if(judgeFieldType(field) == FieldType.COLLECTION_TYPE || judgeFieldType(field) == FieldType.ARRAY)
 					{
 						try {
 							if(value != null)
 							{
-								CollectionType collectionType = judgeCollectionType(field);
-								switch(collectionType)
-								{
-									case COLLECTION:
-									case LIST:
-									case MAP:
-										fillValue = gson.toJson(value);
-										newElement.setText(jsonMessage.replace("json", fillValue));
-										break;
-								}
+								fillValue = gson.toJson(value);
+								newElement.setText(jsonMessage.replace("json", fillValue));
+								break;
 							}
 						} catch (JsonSyntaxException e) {
 							System.out.println("json转集合出错:" + e.getMessage());
@@ -258,6 +251,38 @@ public class JavaBeanFactory implements Factory
 							System.out.println("json转集合出错:" + e.getMessage());
 						}
 					}
+					//数组
+					else if(judgeFieldType(field) == FieldType.ARRAY)
+					{
+						try {
+							Object value = getElementValue(element, field);
+							if(value != null)
+							{
+								fatherTargetObject = outObject;
+								
+								//Use JsonReader.setLenient(true) to accept malformed JSON
+								Reader reader = new StringReader(value.toString());
+								JsonReader jr = new JsonReader(reader);
+								jr.setLenient(true);
+								JsonParser parser = new JsonParser();
+								JsonElement je = parser.parse(jr);
+								
+								Type t = field.getGenericType();//获取泛型类型
+								Object array = gson.fromJson(je, t);
+								if(array != null)
+								{
+									try {
+										Method setMethod = objectClass.getMethod(setMethodName, field.getType());
+										setMethod.invoke(fatherTargetObject, array);
+									} catch (Exception e) {
+										e.printStackTrace();
+									}
+								}
+							}
+						} catch (JsonSyntaxException e) {
+							System.out.println("json转集合出错:" + e.getMessage());
+						}
+					}
 					//复合类型
 					else
 					{
@@ -297,7 +322,8 @@ public class JavaBeanFactory implements Factory
 		{
 			// TODO 能否改为万能类型转换
 			//FieldType.COLLECTION_TYPE集合类型用json传输，所以用String处理
-			if (valueType.equals(String.class) || judgeFieldType(field) == FieldType.COLLECTION_TYPE)
+			if (valueType.equals(String.class) || judgeFieldType(field) == FieldType.COLLECTION_TYPE || 
+					judgeFieldType(field) == FieldType.ARRAY)
 			{
 				value = xmlValue;
 				return value;
@@ -373,14 +399,15 @@ public class JavaBeanFactory implements Factory
 	
 	private enum FieldType
 	{
-		SIMPLE_TYPE,COLLECTION_TYPE,COMPOUND_TYPE;
+		SIMPLE_TYPE,COLLECTION_TYPE,COMPOUND_TYPE,ARRAY;
 	}
 	
 	private enum CollectionType
 	{
-		COLLECTION,LIST,MAP;
+		COLLECTION,LIST,MAP,ARRAY//数组;
 	}
 	
+	private String[] SIMPLETYPEARRAY = {"int;","Integer;","double;","String;","boolean;","byte;","shot;","long;","float;","char;","Date;"};//数组类型
 	private String[] SIMPLETYPE = {"int","Integer","double","String","boolean","byte","shot","long","float","char","Date"};
 	private String[] COLLECTIONYPE = {"ArrayList","List","Map","HashMap","AbstractCollection","ArrayList","Arrays","Collection"};
 	private boolean include(String val, String ...vals)
@@ -410,12 +437,22 @@ public class JavaBeanFactory implements Factory
 			type = FieldType.COLLECTION_TYPE;
 			return type;
 		}
+		if(include(field.getType().toString(), SIMPLETYPEARRAY) || include(getClassType(field.getType().toString()), SIMPLETYPEARRAY))
+		{
+			type = FieldType.ARRAY;
+			return type;
+		}
 		return type;
 	}
 	
 	private CollectionType judgeCollectionType(Field field)
 	{
 		CollectionType type = CollectionType.COLLECTION;
+		if(include(field.getType().toString(), COLLECTIONYPE) || include(getClassType(field.getType().toString()), COLLECTIONYPE) || 
+				include(field.getType().toString(), SIMPLETYPEARRAY) || include(getClassType(field.getType().toString()), SIMPLETYPEARRAY))
+		{
+			return type;
+		}
 		try {
 			type = CollectionType.valueOf(getClassType(field.getType().toString()).toUpperCase());
 		} catch (Exception e) {
