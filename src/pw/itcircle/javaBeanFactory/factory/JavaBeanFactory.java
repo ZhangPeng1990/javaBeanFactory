@@ -58,6 +58,17 @@ public class JavaBeanFactory implements Factory
 		return finalTargetObject;
 	}
 	
+	public Document getObjectDocument(String input, String rootElementName) throws NameConflictException
+	{
+		Document inputDoc = null;
+		try {
+			inputDoc = XmlTool.stringToDocument(input);
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		return getObjectDocument(inputDoc, rootElementName);
+	}
+	
 	public Document getObjectDocument(Object input, String rootElementName) throws NameConflictException
 	{
 		if(StringUtil.haveContent(rootElementName) && getClassName(input.getClass()).equalsIgnoreCase(rootElementName))
