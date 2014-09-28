@@ -49,6 +49,12 @@ public class JavaBeanFactory implements Factory
 
 	private JavaBeanFactory(){};
 	
+	public Object createObject(String document, Object target) throws Exception
+	{
+		Document inputDoc = XmlTool.stringToDocument(document);
+		return createObject(inputDoc, target);
+	}
+	
 	public Object createObject(Document document, Object target) throws Exception
 	{
 		Class<?> targetClass = Class.forName(getFullClassName(target));
@@ -329,7 +335,7 @@ public class JavaBeanFactory implements Factory
 		Object value = null;
 		Object valueType = field.getType();
 		String xmlValue = textTrim(element.element(field.getName()));
-		if(xmlValue != null)
+		if(StringUtil.haveContent(xmlValue))
 		{
 			// TODO 能否改为万能类型转换
 			//FieldType.COLLECTION_TYPE集合类型用json传输，所以用String处理
@@ -339,30 +345,35 @@ public class JavaBeanFactory implements Factory
 				value = xmlValue;
 				return value;
 			}
-			if (valueType.equals(Integer.class) || valueType.equals(int.class))
-			{
-				value = Integer.parseInt(xmlValue);
-				return value;
-			}
-			if (valueType.equals(Float.class) || valueType.equals(float.class))
-			{
-				value = Float.parseFloat(xmlValue);
-				return value;
-			}
-			if (valueType.equals(Long.class) || valueType.equals(long.class))
-			{
-				value = Long.valueOf(xmlValue);
-				return value;
-			}
-			if (valueType.equals(Double.class) || valueType.equals(double.class))
-			{
-				value = Double.valueOf(xmlValue);
-				return value;
-			}
-			if (valueType.equals(Boolean.class) || valueType.equals(boolean.class))
-			{
-				value = Boolean.parseBoolean(xmlValue);
-				return value;
+			try {
+				if (valueType.equals(Integer.class) || valueType.equals(int.class))
+				{
+					value = Integer.parseInt(xmlValue);
+					return value;
+				}
+				if (valueType.equals(Float.class) || valueType.equals(float.class))
+				{
+					value = Float.parseFloat(xmlValue);
+					return value;
+				}
+				if (valueType.equals(Long.class) || valueType.equals(long.class))
+				{
+					value = Long.valueOf(xmlValue);
+					return value;
+				}
+				if (valueType.equals(Double.class) || valueType.equals(double.class))
+				{
+					value = Double.valueOf(xmlValue);
+					return value;
+				}
+				if (valueType.equals(Boolean.class) || valueType.equals(boolean.class))
+				{
+					value = Boolean.parseBoolean(xmlValue);
+					return value;
+				}
+			} catch (NumberFormatException e) {
+				System.out.println(element.getName() + "节点的值" + element.getTextTrim() + "转换类型错误");
+				e.printStackTrace();
 			}
 		}
 		return value;
@@ -459,16 +470,17 @@ public class JavaBeanFactory implements Factory
 	private CollectionType judgeCollectionType(Field field)
 	{
 		CollectionType type = CollectionType.COLLECTION;
-		if(include(field.getType().toString(), COLLECTIONYPE) || include(getClassType(field.getType().toString()), COLLECTIONYPE) || 
-				include(field.getType().toString(), SIMPLETYPEARRAY) || include(getClassType(field.getType().toString()), SIMPLETYPEARRAY))
-		{
-			return type;
-		}
 		try {
 			type = CollectionType.valueOf(getClassType(field.getType().toString()).toUpperCase());
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("没有对应的" + getClassType(field.getType().toString()).toUpperCase() + "类型");
+			
+			if(include(field.getType().toString(), COLLECTIONYPE) || include(getClassType(field.getType().toString()), COLLECTIONYPE) || 
+					include(field.getType().toString(), SIMPLETYPEARRAY) || include(getClassType(field.getType().toString()), SIMPLETYPEARRAY))
+			{
+				return type;
+			}
 		}
 		return type;
 	}

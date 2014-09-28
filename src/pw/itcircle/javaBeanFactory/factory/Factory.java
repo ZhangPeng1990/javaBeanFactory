@@ -13,6 +13,15 @@ public interface Factory {
 	 * @return
 	 * @throws Exception
 	 */
+	public Object createObject(String document, Object target) throws Exception;
+	
+	/**
+	 * XML 生成 JavaBean
+	 * @param document
+	 * @param target
+	 * @return
+	 * @throws Exception
+	 */
 	public Object createObject(Document document, Object target) throws Exception;
 	
 	/**
